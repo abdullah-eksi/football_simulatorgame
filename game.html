@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Tek Kale Futbol Simülasyonu</title>
+  <style>
+    body { 
+      background: #000; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas { 
+      background: #111; 
+      border-radius: 50%; 
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    }
+    .score-board {
+      color: white;
+      font-size: 24px;
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 10px;
+      border: 2px solid #0ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .timer {
+      font-size: 18px;
+      margin-top: 5px;
+      color: #0ff;
+    }
+    .controls {
+      margin-top: 20px;
+      color: white;
+      text-align: center;
+    }
+    button {
+      background: #0ff;
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      margin: 0 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #0dd;
+    }
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+    .loading {
+      color: white;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .logo-input-container {
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .logo-input {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-input label {
+      color: white;
+      width: 120px;
+    }
+    .logo-input input {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #0ff;
+      background: #222;
+      color: white;
+      width: 200px;
+    }
+    .color-input {
+      width: 60px !important;
+    }
+    .logo-preview {
+      display: flex;
+      gap: 20px;
+      margin: 15px 0;
+    }
+    .logo-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .logo-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid #0ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .logo-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .logo-name {
+      color: white;
+      font-size: 12px;
+    }
+    .game-setup {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+      border: 2px solid #0ff;
+      margin-bottom: 20px;
+    }
+    .team-setup {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 15px;
+    }
+    .team-config {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 15px;
+      border: 1px solid #0ff;
+      border-radius: 5px;
+      width: 250px;
+    }
+    .team-config h3 {
+      margin: 0;
+      color: #0ff;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="score-board">
+      <div id="score-text">Takım A: 0 - Takım B: 0</div>
+      <div class="timer" id="timer">60 saniye</div>
+    </div>
+    
+    <div class="game-setup">
+      <div class="team-setup">
+        <div class="team-config">
+          <h3>Takım 1</h3>
+          <div class="logo-input">
+            <label for="team1-name">İsim:</label>
+            <input type="text" id="team1-name" value="Galatasaray">
+          </div>
+          <div class="logo-input">
+            <label for="team1-color">Renk:</label>
+            <input type="color" id="team1-color" class="color-input" value="#ff0000">
+          </div>
+          <div class="logo-input">
+            <label for="team1-logo">Logo URL:</label>
+            <input type="text" id="team1-logo" 
+                   placeholder="https://example.com/logo.png"
+                   value="data:image/png;base64,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">
+          </div>
+        </div>
+        
+        <div class="team-config">
+          <h3>Takım 2</h3>
+          <div class="logo-input">
+            <label for="team2-name">İsim:</label>
+            <input type="text" id="team2-name" value="Liverpool">
+          </div>
+          <div class="logo-input">
+            <label for="team2-color">Renk:</label>
+            <input type="color" id="team2-color" class="color-input" value="#ffffff">
+          </div>
+          <div class="logo-input">
+            <label for="team2-logo">Logo URL:</label>
+            <input type="text" id="team2-logo" 
+                   placeholder="https://example.com/logo.png"
+                   value="data:image/png;base64,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">
+          </div>
+        </div>
+      </div>
+      
+      <button id="start-game">Oyunu Başlat</button>
+    </div>
+    
+    <canvas id="game" width="500" height="500" style="display: none;"></canvas>
+    
+    <div class="controls" id="game-controls" style="display: none;">
+      <div class="logo-preview" id="logo-preview">
+        <div class="logo-item">
+          <div class="logo-circle">
+            <img id="preview-team1" src="" alt="Takım 1">
+          </div>
+          <div class="logo-name" id="preview-name1">Takım 1</div>
+        </div>
+        <div class="logo-item">
+          <div class="logo-circle">
+            <img id="preview-team2" src="" alt="Takım 2">
+          </div>
+          <div class="logo-name" id="preview-name2">Takım 2</div>
+        </div>
+      </div>
+      
+      <div class="loading" id="loading" style="display: none;">Logolar yükleniyor...</div>
+      
+      <p>Toplar rastgele hareket ediyor. Kaleye giren her top 1 puan kazandırır.</p>
+      <button id="reset">Oyunu Sıfırla</button>
+      <button id="pause">Durdur/Devam</button>
+    </div>
+  </div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+const center = { x: W/2, y: H/2 };
+const radius = W/2 - 20;
+
+// Oyun değişkenleri
+const GAME_DURATION = 60; // 60 saniye
+let timeLeft = GAME_DURATION;
+let gameRunning = false;
+let gameStarted = false;
+let gameTimer = null;
+
+// Minimum hız değeri
+const MIN_SPEED = 3.5;
+
+// Takım logoları için değişkenler
+let teamLogos = {
+  team1: null,
+  team2: null
+};
+
+// Takım bilgileri
+let teams = {
+  team1: { name: "Takım 1", color: "#ff0000", score: 0 },
+  team2: { name: "Takım 2", color: "#ffffff", score: 0 }
+};
+
+// Toplar
+let balls = [];
+
+// Kale
+let goal = { angleWidth: Math.PI / 6, anglePos: Math.PI * 1.75 }; // 30°
+let goalSpeed = 0.01; // kale dönüyor
+
+let logosLoaded = false;
+
+// Minimum hız kontrolü ile rastgele hız fonksiyonu
+function randomSpeed() {
+  // Minimum hız kontrolü ile rastgele hız
+  let speed = Math.random() * 4 + MIN_SPEED;
+  return Math.random() < 0.5 ? -speed : speed;
+}
+
+// Hızı minimum değerin altına düşmeyecek şekilde ayarla
+function ensureMinimumSpeed(ball) {
+  const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+  if (currentSpeed < MIN_SPEED) {
+    const angle = Math.atan2(ball.dy, ball.dx);
+    ball.dx = Math.cos(angle) * MIN_SPEED;
+    ball.dy = Math.sin(angle) * MIN_SPEED;
+  }
+}
+
+// PNG logoları yükleme
+function loadTeamLogos() {
+  const loadingElement = document.getElementById('loading');
+  
+  loadingElement.textContent = 'Logolar yükleniyor...';
+  loadingElement.style.display = 'block';
+  
+  const team1LogoUrl = document.getElementById('team1-logo').value.trim();
+  const team2LogoUrl = document.getElementById('team2-logo').value.trim();
+  
+  let loadedLogos = 0;
+  const totalLogos = 2;
+  
+  // Takım 1 logosunu yükle
+  if (team1LogoUrl) {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = function() {
+      teamLogos.team1 = img;
+      document.getElementById('preview-team1').src = team1LogoUrl;
+      loadedLogos++;
+      if (loadedLogos === totalLogos) {
+        onAllLogosLoaded();
+      }
+    };
+    img.onerror = function() {
+      console.error('Takım 1 logosu yüklenemedi');
+      createFallbackLogo('team1');
+      loadedLogos++;
+      if (loadedLogos === totalLogos) {
+        onAllLogosLoaded();
+      }
+    };
+    img.src = team1LogoUrl;
+  } else {
+    createFallbackLogo('team1');
+    loadedLogos++;
+  }
+  
+  // Takım 2 logosunu yükle
+  if (team2LogoUrl) {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = function() {
+      teamLogos.team2 = img;
+      document.getElementById('preview-team2').src = team2LogoUrl;
+      loadedLogos++;
+      if (loadedLogos === totalLogos) {
+        onAllLogosLoaded();
+      }
+    };
+    img.onerror = function() {
+      console.error('Takım 2 logosu yüklenemedi');
+      createFallbackLogo('team2');
+      loadedLogos++;
+      if (loadedLogos === totalLogos) {
+        onAllLogosLoaded();
+      }
+    };
+    img.src = team2LogoUrl;
+  } else {
+    createFallbackLogo('team2');
+    loadedLogos++;
+  }
+  
+  // Tüm logolar yüklendiğinde
+  function onAllLogosLoaded() {
+    logosLoaded = true;
+    loadingElement.style.display = 'none';
+    
+    // Topları oluştur
+    createBalls();
+    
+    // Oyunu başlat
+    startGame();
+  }
+}
+
+// API çalışmazsa yerel logo oluştur
+function createFallbackLogo(team) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 60;
+  canvas.height = 60;
+  const ctx = canvas.getContext('2d');
+  
+  const teamInfo = teams[team];
+  
+  // Logo arkaplanı - daire şeklinde
+  ctx.fillStyle = teamInfo.color;
+  ctx.beginPath();
+  ctx.arc(30, 30, 30, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Logo metni
+  ctx.fillStyle = teamInfo.color === "#ffffff" ? "#000000" : "#ffffff";
+  ctx.font = 'bold 16px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(teamInfo.name.substring(0, 3), 30, 30);
+  
+  const img = new Image();
+  img.onload = function() {
+    teamLogos[team] = img;
+    
+    // Preview'a ekle
+    if (team === 'team1') {
+      document.getElementById('preview-team1').src = canvas.toDataURL();
+    } else {
+      document.getElementById('preview-team2').src = canvas.toDataURL();
+    }
+  };
+  img.src = canvas.toDataURL();
+}
+
+// Topları oluştur
+function createBalls() {
+  balls = [
+    { 
+      x: center.x, 
+      y: center.y - 70, 
+      r: 35, 
+      dx: randomSpeed(), 
+      dy: randomSpeed(), 
+      color: teams.team1.color, 
+      team: "team1" 
+    },
+    { 
+      x: center.x, 
+      y: center.y + 70, 
+      r: 35, 
+      dx: randomSpeed(), 
+      dy: randomSpeed(), 
+      color: teams.team2.color, 
+      team: "team2" 
+    }
+  ];
+}
+
+function drawCircle() {
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = "#0ff";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+function drawGoal() {
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius, goal.anglePos, goal.anglePos + goal.angleWidth);
+  ctx.strokeStyle = "#0f0";
+  ctx.lineWidth = 15;
+  ctx.stroke();
+  
+  // Kale içini vurgula
+  ctx.beginPath();
+  ctx.moveTo(center.x, center.y);
+  ctx.arc(center.x, center.y, radius, goal.anglePos, goal.anglePos + goal.angleWidth);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(0, 255, 0, 0.1)";
+  ctx.fill();
+}
+
+function drawBalls() {
+  balls.forEach(b => {
+    // Top gövdesi
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = b.color;
+    ctx.fill();
+    
+    // Toplara gölge efekti ekle
+    ctx.beginPath();
+    ctx.arc(b.x - 3, b.y - 3, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.fill();
+    
+    // Logo çizimi - circle avatar şeklinde
+    if (logosLoaded && teamLogos[b.team]) {
+      const logoSize = b.r * 1.8;
+      
+      // Logo için daire klip maskesi oluştur
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r * 0.9, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      
+      // Logoyu çiz
+      ctx.drawImage(teamLogos[b.team], 
+                   b.x - logoSize/2, b.y - logoSize/2, 
+                   logoSize, logoSize);
+      
+      ctx.restore();
+      
+      // Daire çerçevesi
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r * 0.9, 0, Math.PI * 2);
+      ctx.strokeStyle = b.color === "#ffffff" ? "#000000" : "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    } else {
+      // Logo yüklenmediyse metin göster
+      ctx.fillStyle = b.color === "#ffffff" ? "#000000" : "#ffffff";
+      ctx.font = "bold 12px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(teams[b.team].name.substring(0, 3), b.x, b.y);
+    }
+  });
+}
+
+function moveBalls() {
+  // top-top çarpışması
+  for (let i = 0; i < balls.length; i++) {
+    for (let j = i + 1; j < balls.length; j++) {
+      let b1 = balls[i];
+      let b2 = balls[j];
+      let dx = b2.x - b1.x;
+      let dy = b2.y - b1.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      
+      if (dist < b1.r + b2.r) {
+        // Çarpışma oldu
+        let angle = Math.atan2(dy, dx);
+        
+        // Enerji kaybı ekle
+        let energyLoss = 0.95;
+        
+        // Çarpışma sonrası hızları hesapla
+        b1.dx = -Math.cos(angle) * (Math.random() * 4 + MIN_SPEED) * energyLoss;
+        b1.dy = -Math.sin(angle) * (Math.random() * 4 + MIN_SPEED) * energyLoss;
+        b2.dx = Math.cos(angle) * (Math.random() * 4 + MIN_SPEED) * energyLoss;
+        b2.dy = Math.sin(angle) * (Math.random() * 4 + MIN_SPEED) * energyLoss;
+        
+        // Minimum hız kontrolü
+        ensureMinimumSpeed(b1);
+        ensureMinimumSpeed(b2);
+        
+        // Topları birbirinden ayır
+        let overlap = (b1.r + b2.r - dist) / 2;
+        b1.x -= overlap * Math.cos(angle);
+        b1.y -= overlap * Math.sin(angle);
+        b2.x += overlap * Math.cos(angle);
+        b2.y += overlap * Math.sin(angle);
+      }
+    }
+  }
+
+  balls.forEach(b => {
+    b.x += b.dx;
+    b.y += b.dy;
+
+    // duvara çarpma
+    let dx = b.x - center.x;
+    let dy = b.y - center.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    
+    if (dist + b.r > radius) {
+      let angle = Math.atan2(dy, dx);
+      b.x = center.x + Math.cos(angle) * (radius - b.r);
+      b.y = center.y + Math.sin(angle) * (radius - b.r);
+      
+      // Enerji kaybı ekle
+      let energyLoss = 0.1;
+      let dot = b.dx * Math.cos(angle) + b.dy * Math.sin(angle);
+      b.dx = (b.dx - 3 * dot * Math.cos(angle)) * energyLoss;
+      b.dy = (b.dy - 3 * dot * Math.sin(angle)) * energyLoss;
+      
+      // Minimum hız kontrolü
+      ensureMinimumSpeed(b);
+    }
+
+    // gol kontrolü
+    let angle = Math.atan2(b.y - center.y, b.x - center.x);
+    if (angle < 0) angle += Math.PI*2;
+    if (angle >= goal.anglePos && angle <= goal.anglePos + goal.angleWidth && dist + b.r >= radius) {
+      teams[b.team].score++;
+      updateScoreDisplay();
+      resetBall(b);
+    }
+  });
+
+  // kale dönsün
+  goal.anglePos += goalSpeed;
+  if (goal.anglePos > Math.PI*2) goal.anglePos -= Math.PI*2;
+}
+
+function resetBall(ball) {
+  // Topu merkeze yakın bir yere sıfırla
+  ball.x = center.x + (Math.random() * 100 - 50);
+  ball.y = center.y + (Math.random() * 100 - 50);
+  ball.dx = randomSpeed();
+  ball.dy = randomSpeed();
+  
+  // Minimum hız kontrolü
+  ensureMinimumSpeed(ball);
+}
+
+function updateScoreDisplay() {
+  document.getElementById("score-text").textContent = 
+    `${teams.team1.name}: ${teams.team1.score} - ${teams.team2.name}: ${teams.team2.score}`;
+}
+
+function updateTimer() {
+  document.getElementById("timer").textContent = `${timeLeft} saniye`;
+}
+
+function resetGame() {
+  teams.team1.score = 0;
+  teams.team2.score = 0;
+  timeLeft = GAME_DURATION;
+  updateScoreDisplay();
+  updateTimer();
+  balls.forEach(ball => resetBall(ball));
+}
+
+function startGame() {
+  gameStarted = true;
+  gameRunning = true;
+  
+  // UI'ı güncelle
+  document.querySelector('.game-setup').style.display = 'none';
+  canvas.style.display = 'block';
+  document.getElementById('game-controls').style.display = 'block';
+  document.getElementById('start-game').disabled = true;
+  
+  // Takım bilgilerini güncelle
+  teams.team1.name = document.getElementById('team1-name').value || "Takım 1";
+  teams.team1.color = document.getElementById('team1-color').value;
+  teams.team2.name = document.getElementById('team2-name').value || "Takım 2";
+  teams.team2.color = document.getElementById('team2-color').value;
+  
+  // Önizleme isimlerini güncelle
+  document.getElementById('preview-name1').textContent = teams.team1.name;
+  document.getElementById('preview-name2').textContent = teams.team2.name;
+  
+  updateScoreDisplay();
+  
+  // Zamanlayıcıyı başlat
+  gameTimer = setInterval(function() {
+    timeLeft--;
+    updateTimer();
+    
+    if (timeLeft <= 0) {
+      clearInterval(gameTimer);
+      gameRunning = false;
+      alert(`Oyun bitti! Sonuç: ${teams.team1.name} ${teams.team1.score} - ${teams.team2.name} ${teams.team2.score}`);
+    }
+  }, 1000);
+  
+  // Oyun döngüsünü başlat
+  loop();
+}
+
+function loop() {
+  if (!gameRunning) {
+    requestAnimationFrame(loop);
+    return;
+  }
+  
+  ctx.clearRect(0, 0, W, H);
+  drawCircle();
+  drawGoal();
+  drawBalls();
+  moveBalls();
+  requestAnimationFrame(loop);
+}
+
+// Kontroller
+document.getElementById("reset").addEventListener("click", resetGame);
+document.getElementById("pause").addEventListener("click", function() {
+  if (gameStarted) {
+    gameRunning = !gameRunning;
+    if (gameRunning) loop();
+  }
+});
+
+// Oyun başlatma butonu
+document.getElementById("start-game").addEventListener("click", function() {
+  loadTeamLogos();
+});
+
+// Oyun döngüsünü başlat
+loop();
+</script>
+</body>
+</html>
